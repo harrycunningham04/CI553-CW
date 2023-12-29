@@ -5,6 +5,7 @@ import java.util.Locale;
 /**
  * Write a description of class BetterBasket here.
  * Simplifies the implementation of getDetails method
+ * uses a local ordernum field
  * 
  * @author  Harry Cunningham
  * @version 1.0
