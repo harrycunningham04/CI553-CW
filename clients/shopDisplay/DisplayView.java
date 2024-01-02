@@ -5,164 +5,84 @@ import middle.OrderException;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 
 /**
- * The visual display seen by customers (Change to graphical version)
- * Change to a graphical display
- * @author  Mike Smith University of Brighton
- * @version 1.0
+ * The graphical display seen by customers
+ * Represents a graphical display using Swing components
+ * @author  Harry Cunningham
+ * @version 2.0
  */
-public class DisplayView extends Canvas implements Observer
-{
-  private static final long serialVersionUID = 1L;
-  private Font font = new Font("Monospaced",Font.BOLD,24);
-  private int H = 300;         // Height of window 
-  private int W = 400;         // Width  of window 
-  private String textToDisplay = "";
-  private DisplayController cont= null;
-  
-  /**
-   * Construct the view
-   * @param rpc   Window in which to construct
-   * @param mf    Factor to deliver order and stock objects
-   * @param x     x-coordinate of position of window on screen 
-   * @param y     y-coordinate of position of window on screen  
-   */
-  
-  public DisplayView(  RootPaneContainer rpc, MiddleFactory mf, int x, int y )
-  {
-    Container cp         = rpc.getContentPane();    // Content Pane
-    Container rootWindow = (Container) rpc;         // Root Window
-    cp.setLayout( new BorderLayout() );             // Border N E S W CENTER 
-    rootWindow.setSize( W, H );                     // Size of Window  
-    rootWindow.setLocation( x, y );                 // Position on screen
-    rootWindow.add( this, BorderLayout.CENTER );    //  Add to rootwindow
-    
-    rootWindow.setVisible( true );                  // Make visible
-  }
-  
-  
-  public void setController( DisplayController c )
-  {
-    cont = c;
-  }
-  
-  /**
-   * Called to update the display in the shop
-   */
-  @Override
-  public void update( Observable aModelOfDisplay, Object arg )
-  {
-    // Code to update the graphical display with the current
-    //  state of the system
-    //  Orders awaiting processing
-    //  Orders being picked in the 'warehouse. 
-    //  Orders awaiting collection
-    
-    try
-    {
-      Map<String, List<Integer> > res =
-      ( (DisplayModel) aModelOfDisplay ).getOrderState();
-
-      textToDisplay = 
-           "Orders in system" + "\n" +
-           "Waiting        : " + listOfOrders( res, "Waiting" ) + 
-           "\n"  + 
-           "Being picked   : " + listOfOrders( res, "BeingPicked" ) + 
-           "\n"  + 
-           "To Be Collected: " + listOfOrders( res, "ToBeCollected" );
-    }
-    catch ( OrderException err )
-    {
-      textToDisplay = "\n" + "** Communication Failure **";
-    }
-    repaint();                            // Draw graphically    
-  }
-  
-  @Override
-  public void update( Graphics g )        // Called by repaint
-  {                                       // 
-    drawScreen( (Graphics2D) g );         // Draw information on screen
-  }
+public class DisplayView extends JFrame implements Observer {
+    private JTextArea displayTextArea;
+    private DisplayController cont = null;
 
     /**
-     * Redraw the screen double buffered
-     * @param g Graphics context
+     * Construct the view
+     *
+     * @param rpc Window in which to construct
+     * @param mf  Factory to deliver order and stock objects
+     * @param x   x-coordinate of position of window on screen
+     * @param y   y-coordinate of position of window on screen
      */
-  @Override 
-  public void paint( Graphics g )         // When 'Window' is first 
-  {                                       //  shown or damaged 
-    drawScreen( (Graphics2D) g );         // Draw information on screen
-  }
+    public DisplayView(RootPaneContainer rpc, MiddleFactory mf, int x, int y) {
+        setTitle("Shop Display");
+        setSize(400, 300);
+        setLocation(x, y);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-  private Dimension     theAD;           // Alternate Dimension
-  private BufferedImage theAI;           // Alternate Image
-  private Graphics2D    theAG;           // Alternate Graphics
-  
-  public void drawScreen( Graphics2D g )  // Re draw contents 
-  {                                         //  allow resize
-    Dimension d    = getSize();             // Size of image
+        displayTextArea = new JTextArea();
+        displayTextArea.setFont(new Font("Monospaced", Font.BOLD, 16));
+        displayTextArea.setEditable(false);
 
-    if (  ( theAG == null )           ||
-          ( d.width  != theAD.width ) ||
-          ( d.height != theAD.height )   )
-    {                                       // New size
-      theAD = d;
-      theAI = (BufferedImage) createImage( d.width, d.height );
-      theAG = theAI.createGraphics();
+        JScrollPane scrollPane = new JScrollPane(displayTextArea);
+        add(scrollPane);
+
+        setVisible(true);
     }
-    drawActualScreen( theAG );            // draw
-    g.drawImage( theAI, 0, 0, this );     // Now on screen
-  }
-  
-  /**
-   * Redraw the screen
-   * @param g Graphics context
-   */
- 
-  public void drawActualScreen( Graphics2D g )  // Re draw contents 
-  {
-    g.setPaint( Color.white );            // Paint Colour 
-    W = getWidth(); H = getHeight();      // Current size
-    
-    g.setFont( font );
-    g.fill( new Rectangle2D.Double( 0, 0, W, H ) );
 
-    // Draw state of system on display
-    String lines[] = textToDisplay.split("\n");
-    g.setPaint( Color.black );
-    for ( int i=0; i<lines.length; i++ )
-    {
-      g.drawString( lines[i], 0, 50 + 50*i );
+    public void setController(DisplayController c) {
+        cont = c;
     }
-    
-  }
 
-  /**
-   * Return a string of order numbers
-   * @param map Contains the current state of the system
-   * @param key The key of the list requested
-   * @return As a string a list of order numbers.
-   */
-  private String listOfOrders( Map<String, List<Integer> > map, String key )
-  {
-    String res = "";
-    if ( map.containsKey( key ))
-    {
-      List<Integer> orders = map.get(key);
-      for ( Integer i : orders )
-      {
-        res += " " + i;
-      }
-    } else {
-      res = "-No key-";
+    /**
+     * Called to update the display in the shop
+     */
+    @Override
+    public void update(Observable aModelOfDisplay, Object arg) {
+        try {
+            Map<String, List<Integer>> res = ((DisplayModel) aModelOfDisplay).getOrderState();
+            updateDisplayText(res);
+        } catch (OrderException err) {
+            updateDisplayTextError();
+        }
     }
-    return res;
-  }
+
+    private void updateDisplayText(Map<String, List<Integer>> orderState) {
+        StringBuilder displayText = new StringBuilder();
+        displayText.append("Orders in system\n");
+        displayText.append("Waiting        : ").append(listOfOrders(orderState, "Waiting")).append("\n");
+        displayText.append("Being picked   : ").append(listOfOrders(orderState, "BeingPicked")).append("\n");
+        displayText.append("To Be Collected: ").append(listOfOrders(orderState, "ToBeCollected")).append("\n");
+
+        SwingUtilities.invokeLater(() -> {
+            displayTextArea.setText(displayText.toString());
+            displayTextArea.setCaretPosition(0); // Scroll to the top
+        });
+    }
+
+    private void updateDisplayTextError() {
+        SwingUtilities.invokeLater(() -> {
+            displayTextArea.setText("** Communication Failure **");
+            displayTextArea.setCaretPosition(0); // Scroll to the top
+        });
+    }
+
+    private String listOfOrders(Map<String, List<Integer>> map, String key) {
+        return map.containsKey(key) ? map.get(key).toString() : "-No key-";
+    }
 }
+
